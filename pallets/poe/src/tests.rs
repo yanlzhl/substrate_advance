@@ -43,6 +43,7 @@ fn test_create_claim_failed_when_claim_is_too_long() {
 }
 
 
+
 #[test]
 fn test_revoke_claim() {
     new_test_ext().execute_with(|| {
