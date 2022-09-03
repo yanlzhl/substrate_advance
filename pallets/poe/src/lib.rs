@@ -4,7 +4,16 @@
 /// Learn more about FRAME and the core library of Substrate FRAME pallets:
 /// <https://docs.substrate.io/v3/runtime/frame>
 /// 导出poe模块内容
-pub use frame_system::pallet::*;
+pub use pallet::*;
+
+
+#[cfg(test)]
+mod mock;
+
+#[cfg(test)]
+mod tests;
+
+
 
 // template也是如此定义的
 // 涉及模块引用知识点 需要复习下
@@ -82,27 +91,26 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(0)]
-		pub fn revoke_claim(origin: OriginFor<T>, claim: Vec<u8>) -> DispatchResultWithPostInfo {
-			let sender = ensure_signed(origin)?;
+		pub fn revoke_claim(_origin: OriginFor<T>, _claim: Vec<u8>) -> DispatchResultWithPostInfo {
+			let sender = ensure_signed(_origin)?;
+            let bounded_claim = BoundedVec::<u8,<T as Config>::MaxClaimLength>::try_from(_claim.clone())
+                .map_err(|_| Error::<T>::ClaimTooLong)?;
 
-			let bound_claim = BoundedVec::<u8, T::MaxClaimLength>::try_from(claim.clone())
-				.map_err(|_| Error::<T>::ClaimTooLong)?;
 
-			let (owner, _) = Proofs::<T>::get(&bound_claim).ok_or(Error::<T>::ClaimNotExist)?;
+            // Verify that the specified proof has been claimed.
+            // Get owner of the claim.
+            let (owner, _) = Proofs::<T>::get(&bounded_claim).ok_or(Error::<T>::ClaimNotExist)?;
 
-			//判断存证是否存在
-			ensure!(!Proofs::<T>::contains_key(&bound_claim), Error::<T>::ProofAlreadyExist);
+            // Verify that sender of the current call is the claim owner.
+            ensure!(sender == owner, Error::<T>::NotClaimOwner);
 
-			//确定所有权
-			ensure!(owner == sender, Error::<T>::NotClaimOwner);
+            // Remove claim from storage.
+            Proofs::<T>::remove(&bounded_claim);
 
-			//撤销存证
-			Proofs::<T>::remove(&bound_claim);
+            // Emit an event that the claim was erased.
+            Self::deposit_event(Event::ClaimRevoke(sender, _claim));
 
-			// 发送事件
-			Self::deposit_event(Event::ClaimRevoke(sender, claim));
-
-			Ok(().into())
+            Ok(().into())
 		}
 
 		#[pallet::weight(0)]

@@ -1,5 +1,5 @@
 use crate as pallet_poe;
-use frame_support::traits::{ConstU16, ConstU64};
+use frame_support::traits::{ConstU16,ConstU32, ConstU64};
 use frame_system as system;
 use sp_core::H256;
 use sp_runtime::{
@@ -18,7 +18,7 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		TemplatePoe: pallet_poe::{Pallet, Call, Storage, Event<T>},
+		PoeMoudle: pallet_poe::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
